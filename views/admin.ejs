@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <title>لوحة التحكم - رفع أغنية</title>
+  <link rel="stylesheet" href="/styles.css">
+  <style>
+    body {
+      font-family: Tahoma, sans-serif;
+      background-color: #f3f3f3;
+      padding: 40px;
+      text-align: center;
+    }
+
+    form {
+      background: white;
+      display: inline-block;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px #ccc;
+    }
+
+    label {
+      display: block;
+      text-align: right;
+      margin-bottom: 5px;
+    }
+
+    input[type="text"],
+    input[type="file"] {
+      width: 300px;
+      padding: 10px;
+      margin-bottom: 20px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+    }
+
+    button {
+      padding: 10px 20px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #0056b3;
+    }
+
+    .link-area {
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>لوحة رفع الأغاني</h1>
+
+  <form action="/upload" method="POST" enctype="multipart/form-data">
+    <label for="title">اسم الأغنية:</label>
+    <input type="text" name="title" id="title" required>
+
+    <label for="artist">اسم الفنان:</label>
+    <input type="text" name="artist" id="artist" required>
+
+    <label for="song">ملف MP3:</label>
+    <input type="file" name="song" id="song" accept=".mp3" required>
+
+    <button type="submit">رفع الأغنية</button>
+  </form>
+
+<% if (songLink) { %>
+  <div style="margin-top: 30px; background: #fff; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px #ccc;">
+    <h3>✅ تم رفع الأغنية بنجاح!</h3>
+    <p><strong>الاسم:</strong> <%= title %></p>
+    <p><strong>الفنان:</strong> <%= artist %></p>
+    <p>
+      <strong>رابط المشاركة:</strong> 
+      <input type="text" value="<%= songLink %>" id="shareLink" readonly style="width: 80%; padding: 10px;">
+      <button onclick="copyLink()">نسخ</button>
+    </p>
+  </div>
+
+  <script>
+    function copyLink() {
+      const input = document.getElementById("shareLink");
+      input.select();
+      input.setSelectionRange(0, 99999);
+      document.execCommand("copy");
+      alert("✅ تم نسخ الرابط!");
+    }
+  </script>
+<% } %>
+
+
+
+  <div class="link-area">
+    <a href="/dashboard">عرض قائمة الأغاني</a>
+  </div>
+
+</body>
+</html>
