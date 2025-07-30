@@ -145,8 +145,13 @@
     <tbody>
       <% songs.forEach(song => { %>
         <tr>
-          <td><%= song.title %></td>
+          <!-- رابط إلى صفحة الأغنية -->
+          <td>
+            <a href="/song/<%= song.url_code %>" target="_blank"><%= song.title %></a>
+          </td>
+
           <td><%= song.artist %></td>
+
           <td>
             <% if (song.createdAt && song.createdAt.toDate) { %>
               <%= song.createdAt.toDate().toLocaleString('ar-EG', {
@@ -160,20 +165,30 @@
               غير متوفر
             <% } %>
           </td>
+
           <td>
             <audio controls>
               <source src="<%= song.url %>" type="audio/mpeg">
               لا يدعم متصفحك التشغيل
             </audio>
           </td>
+
+          <!-- حقل رابط المشاركة -->
           <td>
-            <input type="text" value="<%= song.url %>" readonly style="width: 90%;">
+            <input id="link-<%= song.id %>" type="text"
+                   value="<%= 'https://' + req.headers.host + '/song/' + song.url_code %>"
+                   readonly style="width: 90%;">
           </td>
+
+          <!-- زر نسخ الرابط -->
           <td>
-            <button class="copy-btn" onclick="copyToClipboard('<%= song.url %>')">نسخ</button>
+            <button class="copy-btn" onclick="copyToClipboard('link-<%= song.id %>')">نسخ</button>
           </td>
+
+          <!-- حذف -->
           <td>
-            <form action="/delete/<%= song.id %>" method="POST" onsubmit="return confirm('هل تريد حذف هذه الأغنية؟');">
+            <form action="/delete/<%= song.id %>" method="POST"
+                  onsubmit="return confirm('هل تريد حذف هذه الأغنية؟');">
               <button type="submit">🗑️ حذف</button>
             </form>
           </td>
@@ -185,8 +200,11 @@
   <a class="logout" href="/logout">تسجيل الخروج</a>
 
   <script>
-    function copyToClipboard(text) {
-      navigator.clipboard.writeText(text)
+    function copyToClipboard(id) {
+      const input = document.getElementById(id);
+      input.select();
+      input.setSelectionRange(0, 99999);
+      navigator.clipboard.writeText(input.value)
         .then(() => alert("✅ تم نسخ الرابط"))
         .catch(() => alert("❌ فشل النسخ"));
     }
