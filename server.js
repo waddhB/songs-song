@@ -62,7 +62,7 @@ app.get('/dashboard', async (req, res) => {
   }
 });
 
-// رفع الأغنية إلى Firebase
+// رفع الأغنية إلى Firebase (باستخدام signed URL)
 app.post('/upload', upload.single('song'), async (req, res) => {
   if (!req.session.loggedIn) return res.redirect('/login');
   if (!req.file) return res.status(400).send('لم يتم تحديد ملف');
@@ -73,7 +73,11 @@ app.post('/upload', upload.single('song'), async (req, res) => {
   const url_code = uuidv4(); // رابط خاص وفريد
   const uniqueName = Date.now() + '-' + originalname;
   const blob = bucket.file(`songs/${uniqueName}`);
-  const blobStream = blob.createWriteStream();
+  const blobStream = blob.createWriteStream({
+    metadata: {
+      contentType: req.file.mimetype
+    }
+  });
 
   blobStream.on('error', err => {
     console.error("🔥 خطأ في رفع الملف:", err);
@@ -82,8 +86,11 @@ app.post('/upload', upload.single('song'), async (req, res) => {
 
   blobStream.on('finish', async () => {
     try {
-      await blob.makePublic();
-      const publicUrl = `https://storage.googleapis.com/${bucket.name}/songs/${uniqueName}`;
+      // توليد رابط مؤقت صالح لمدة سنة
+      const [url] = await blob.getSignedUrl({
+        action: 'read',
+        expires: Date.now() + 365 * 24 * 60 * 60 * 1000 // سنة واحدة
+      });
 
       // حفظ بيانات الأغنية في Firestore
       await db.collection('songs').doc(url_code).set({
@@ -91,7 +98,7 @@ app.post('/upload', upload.single('song'), async (req, res) => {
         title,
         artist,
         filename: uniqueName,
-        url: publicUrl,
+        url,
         url_code,
         visibility,
         createdAt: new Date()
@@ -99,7 +106,7 @@ app.post('/upload', upload.single('song'), async (req, res) => {
 
       res.redirect('/dashboard');
     } catch (err) {
-      console.error("🔥 خطأ أثناء حفظ البيانات:", err);
+      console.error("🔥 خطأ أثناء تجهيز الرابط:", err);
       res.status(500).send("حدث خطأ أثناء تجهيز الرابط");
     }
   });
