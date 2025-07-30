@@ -167,10 +167,10 @@
             </audio>
           </td>
           <td>
-            <input type="text" value="http://localhost:3000/song/<%= song.url_code %>" readonly style="width: 90%;">
+            <input type="text" value="<%= song.url %>" readonly style="width: 90%;">
           </td>
           <td>
-            <button class="copy-btn" onclick="copyToClipboard('http://localhost:3000/song/<%= song.url_code %>')">نسخ</button>
+            <button class="copy-btn" onclick="copyToClipboard('<%= song.url %>')">نسخ</button>
           </td>
           <td>
             <form action="/delete/<%= song.id %>" method="POST" onsubmit="return confirm('هل تريد حذف هذه الأغنية؟');">
