@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <title>تسجيل الدخول - لوحة التحكم</title>
+  <style>
+    body {
+      background-color: #f0f2f5;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+
+    .login-box {
+      background: #ffffff;
+      padding: 50px 40px;
+      border-radius: 12px;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+      width: 100%;
+      max-width: 400px;
+      text-align: center;
+    }
+
+    .login-box h1 {
+      margin-bottom: 25px;
+      font-size: 26px;
+      color: #222;
+    }
+
+    .login-box input {
+      width: 100%;
+      padding: 12px 15px;
+      margin: 10px 0;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 15px;
+      transition: 0.3s;
+    }
+
+    .login-box input:focus {
+      border-color: #007bff;
+      outline: none;
+      box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.1);
+    }
+
+    .login-box button {
+      width: 100%;
+      padding: 12px;
+      margin-top: 15px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+
+    .login-box button:hover {
+      background-color: #0056b3;
+    }
+
+    .error-msg {
+      background-color: #ffe3e3;
+      color: #b10000;
+      padding: 10px;
+      margin-bottom: 15px;
+      border: 1px solid #ffcccc;
+      border-radius: 6px;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="login-box">
+    <h1>تسجيل الدخول إلى لوحة التحكم</h1>
+
+    <% if (error) { %>
+      <div class="error-msg"><%= error %></div>
+    <% } %>
+
+    <form action="/login" method="POST">
+      <input type="text" name="username" placeholder="اسم المستخدم" required>
+      <input type="password" name="password" placeholder="كلمة المرور" required>
+      <button type="submit">تسجيل الدخول</button>
+    </form>
+  </div>
+
+</body>
+</html>

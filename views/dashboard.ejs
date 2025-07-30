@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <title>لوحة التحكم - لمسات</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f4f4f4;
+      margin: 0;
+      padding: 30px;
+      color: #333;
+      direction: rtl;
+      text-align: right;
+    }
+
+    h1, h2 {
+      text-align: center;
+      color: #444;
+    }
+
+    .upload-form {
+      background-color: #ffffff;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+      max-width: 700px;
+      margin: auto;
+      margin-bottom: 30px;
+    }
+
+    .upload-form input,
+    .upload-form select,
+    .upload-form button {
+      padding: 10px;
+      margin: 10px 5px;
+      width: 200px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 14px;
+    }
+
+    .upload-form button {
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      transition: 0.3s;
+    }
+
+    .upload-form button:hover {
+      background-color: #45a049;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background-color: #fff;
+      box-shadow: 0 1px 5px rgba(0,0,0,0.1);
+    }
+
+    th, td {
+      border: 1px solid #ddd;
+      padding: 12px;
+    }
+
+    th {
+      background-color: #f2f2f2;
+      color: #333;
+    }
+
+    tr:hover {
+      background-color: #f9f9f9;
+    }
+
+    audio {
+      width: 200px;
+    }
+
+    .copy-btn {
+      background-color: #2196F3;
+      border: none;
+      color: white;
+      padding: 6px 12px;
+      cursor: pointer;
+      border-radius: 5px;
+      font-size: 13px;
+    }
+
+    .copy-btn:hover {
+      background-color: #0b7dda;
+    }
+
+    form button[type="submit"] {
+      background-color: #e74c3c;
+      color: white;
+      border: none;
+      padding: 6px 12px;
+      cursor: pointer;
+      border-radius: 5px;
+      font-size: 13px;
+    }
+
+    form button[type="submit"]:hover {
+      background-color: #c0392b;
+    }
+
+    a.logout {
+      display: block;
+      text-align: center;
+      margin-top: 30px;
+      text-decoration: none;
+      color: #444;
+    }
+  </style>
+</head>
+<body>
+  <h1>لوحة التحكم</h1>
+
+  <form class="upload-form" action="/upload" method="POST" enctype="multipart/form-data">
+    <h2>رفع أغنية جديدة</h2>
+    <input type="text" name="title" placeholder="عنوان الأغنية" required>
+    <input type="text" name="artist" placeholder="اسم الفنان" required>
+    <select name="visibility" required>
+      <option value="public">عام</option>
+      <option value="private">خاص</option>
+    </select>
+    <input type="file" name="song" accept="audio/*" required>
+    <button type="submit">رفع</button>
+  </form>
+
+  <h2>الأغاني المرفوعة</h2>
+
+  <table>
+    <thead>
+      <tr>
+        <th>عنوان الأغنية</th>
+        <th>الفنان</th>
+        <th>تاريخ الرفع</th>
+        <th>تشغيل</th>
+        <th>رابط المشاركة</th>
+        <th>نسخ</th>
+        <th>حذف</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% songs.forEach(song => { %>
+        <tr>
+          <td><%= song.title %></td>
+          <td><%= song.artist %></td>
+          <td>
+            <% if (song.createdAt && song.createdAt.toDate) { %>
+              <%= song.createdAt.toDate().toLocaleString('ar-EG', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+              }) %>
+            <% } else { %>
+              غير متوفر
+            <% } %>
+          </td>
+          <td>
+            <audio controls>
+              <source src="<%= song.url %>" type="audio/mpeg">
+              لا يدعم متصفحك التشغيل
+            </audio>
+          </td>
+          <td>
+            <input type="text" value="http://localhost:3000/song/<%= song.url_code %>" readonly style="width: 90%;">
+          </td>
+          <td>
+            <button class="copy-btn" onclick="copyToClipboard('http://localhost:3000/song/<%= song.url_code %>')">نسخ</button>
+          </td>
+          <td>
+            <form action="/delete/<%= song.id %>" method="POST" onsubmit="return confirm('هل تريد حذف هذه الأغنية؟');">
+              <button type="submit">🗑️ حذف</button>
+            </form>
+          </td>
+        </tr>
+      <% }) %>
+    </tbody>
+  </table>
+
+  <a class="logout" href="/logout">تسجيل الخروج</a>
+
+  <script>
+    function copyToClipboard(text) {
+      navigator.clipboard.writeText(text)
+        .then(() => alert("✅ تم نسخ الرابط"))
+        .catch(() => alert("❌ فشل النسخ"));
+    }
+  </script>
+</body>
+</html>

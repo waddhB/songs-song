@@ -1,0 +1,23 @@
+body {
+  font-family: Arial;
+  background-color: #f9f9f9;
+  padding: 40px;
+  text-align: center;
+}
+
+form {
+  display: inline-block;
+  padding: 30px;
+  background: white;
+  border-radius: 10px;
+  box-shadow: 0 0 10px #ccc;
+}
+
+.container {
+  background: white;
+  padding: 30px;
+  border-radius: 10px;
+  max-width: 500px;
+  margin: auto;
+  box-shadow: 0 0 10px #ccc;
+}
