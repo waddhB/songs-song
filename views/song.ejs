@@ -46,6 +46,36 @@
       color: #aaa;
       margin-top: 20px;
     }
+
+    .buttons {
+      margin-top: 25px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .btn {
+      background-color: #3498db;
+      color: #fff;
+      padding: 10px 18px;
+      border: none;
+      border-radius: 6px;
+      font-size: 15px;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background-color 0.3s;
+    }
+
+    .btn:hover {
+      background-color: #2980b9;
+    }
+
+    .success {
+      color: green;
+      font-size: 14px;
+      margin-top: 10px;
+    }
   </style>
 </head>
 <body>
@@ -58,7 +88,33 @@
       متصفحك لا يدعم تشغيل الصوت.
     </audio>
 
+    <% if (song.visibility === 'public') { %>
+      <div class="buttons">
+        <a class="btn" href="<%= song.url %>" download>تحميل الأغنية</a>
+
+        <button class="btn" onclick="copyLink()">مشاركة الرابط</button>
+        <div id="copySuccess" class="success" style="display:none;">تم نسخ الرابط ✅</div>
+      </div>
+    <% } %>
+
     <div class="note">تم تحميل الصوت من Firebase</div>
   </div>
+
+  <script>
+    function copyLink() {
+      const dummy = document.createElement('input');
+      const text = window.location.href;
+      dummy.value = text;
+      document.body.appendChild(dummy);
+      dummy.select();
+      document.execCommand('copy');
+      document.body.removeChild(dummy);
+
+      document.getElementById('copySuccess').style.display = 'block';
+      setTimeout(() => {
+        document.getElementById('copySuccess').style.display = 'none';
+      }, 3000);
+    }
+  </script>
 </body>
 </html>
