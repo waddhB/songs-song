@@ -76,6 +76,19 @@
       font-size: 14px;
       margin-top: 10px;
     }
+
+    /* 🔒 إخفاء زر التحميل من القائمة */
+    audio::-internal-media-controls-download-button {
+      display: none;
+    }
+
+    audio::-webkit-media-controls-enclosure {
+      overflow: hidden;
+    }
+
+    audio::-webkit-media-controls-panel {
+      width: 100% !important;
+    }
   </style>
 </head>
 <body>
@@ -83,15 +96,21 @@
     <h1><%= song.title %></h1>
     <h3>بواسطة: <%= song.artist %></h3>
 
-    <audio controls>
-      <source src="<%= song.url %>" type="audio/mpeg">
-      متصفحك لا يدعم تشغيل الصوت.
-    </audio>
+    <!-- ✅ تشغيل الصوت مع الحماية في حالة private -->
+    <% if (song.visibility === 'private') { %>
+      <audio controls oncontextmenu="return false" draggable="false">
+        <source src="/stream/<%= song.url_code %>" type="audio/mpeg">
+        متصفحك لا يدعم تشغيل الصوت.
+      </audio>
+      <div class="note" style="margin-top: 25px;">🔒 هذه الأغنية خاصة ولا يمكن تحميلها</div>
+    <% } else { %>
+      <audio controls>
+        <source src="<%= song.url %>" type="audio/mpeg">
+        متصفحك لا يدعم تشغيل الصوت.
+      </audio>
 
-    <% if (song.visibility === 'public') { %>
       <div class="buttons">
         <a class="btn" href="<%= song.url %>" download>تحميل الأغنية</a>
-
         <button class="btn" onclick="copyLink()">مشاركة الرابط</button>
         <div id="copySuccess" class="success" style="display:none;">تم نسخ الرابط ✅</div>
       </div>
@@ -102,18 +121,15 @@
 
   <script>
     function copyLink() {
-      const dummy = document.createElement('input');
       const text = window.location.href;
-      dummy.value = text;
-      document.body.appendChild(dummy);
-      dummy.select();
-      document.execCommand('copy');
-      document.body.removeChild(dummy);
-
-      document.getElementById('copySuccess').style.display = 'block';
-      setTimeout(() => {
-        document.getElementById('copySuccess').style.display = 'none';
-      }, 3000);
+      navigator.clipboard.writeText(text)
+        .then(() => {
+          document.getElementById('copySuccess').style.display = 'block';
+          setTimeout(() => {
+            document.getElementById('copySuccess').style.display = 'none';
+          }, 3000);
+        })
+        .catch(() => alert('❌ فشل نسخ الرابط'));
     }
   </script>
 </body>
