@@ -29,15 +29,17 @@ app.use(session({
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
 
-// صفحة تسجيل الدخول
+// الصفحة الرئيسية → تحويل إلى تسجيل الدخول
 app.get('/', (req, res) => {
   res.redirect('/login');
 });
 
+// صفحة تسجيل الدخول
 app.get('/login', (req, res) => {
   res.render('login', { error: null });
 });
 
+// التحقق من بيانات الدخول
 app.post('/login', (req, res) => {
   const { username, password } = req.body;
   if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
@@ -48,21 +50,21 @@ app.post('/login', (req, res) => {
   }
 });
 
-// لوحة التحكم – عرض كل الأغاني من Firestore
+// لوحة التحكم – عرض جميع الأغاني
 app.get('/dashboard', async (req, res) => {
   if (!req.session.loggedIn) return res.redirect('/login');
 
   try {
     const snapshot = await db.collection('songs').orderBy('createdAt', 'desc').get();
     const songs = snapshot.docs.map(doc => doc.data());
-    res.render('dashboard', { songs });
+    res.render('dashboard', { songs, req }); // ✅ تمرير req لاستخدامه في بناء الروابط
   } catch (err) {
     console.error("🔥 خطأ في قراءة Firestore:", err);
     res.send("Database error");
   }
 });
 
-// رفع الأغنية إلى Firebase (باستخدام signed URL)
+// رفع الأغنية إلى Firebase Storage
 app.post('/upload', upload.single('song'), async (req, res) => {
   if (!req.session.loggedIn) return res.redirect('/login');
   if (!req.file) return res.status(400).send('لم يتم تحديد ملف');
@@ -70,7 +72,7 @@ app.post('/upload', upload.single('song'), async (req, res) => {
   const { originalname, buffer } = req.file;
   const { title, artist, visibility } = req.body;
 
-  const url_code = uuidv4(); // رابط خاص وفريد
+  const url_code = uuidv4(); // رابط فريد
   const uniqueName = Date.now() + '-' + originalname;
   const blob = bucket.file(`songs/${uniqueName}`);
   const blobStream = blob.createWriteStream({
@@ -86,10 +88,10 @@ app.post('/upload', upload.single('song'), async (req, res) => {
 
   blobStream.on('finish', async () => {
     try {
-      // توليد رابط مؤقت صالح لمدة سنة
+      // رابط مؤقت صالح لمدة سنة
       const [url] = await blob.getSignedUrl({
         action: 'read',
-        expires: Date.now() + 365 * 24 * 60 * 60 * 1000 // سنة واحدة
+        expires: Date.now() + 365 * 24 * 60 * 60 * 1000
       });
 
       // حفظ بيانات الأغنية في Firestore
@@ -114,21 +116,21 @@ app.post('/upload', upload.single('song'), async (req, res) => {
   blobStream.end(buffer);
 });
 
-// عرض صفحة الأغنية للعميل
+// عرض صفحة الأغنية عبر url_code
 app.get('/song/:code', async (req, res) => {
   try {
     const doc = await db.collection('songs').doc(req.params.code).get();
     if (!doc.exists) return res.send("لم يتم العثور على الأغنية");
 
     const song = doc.data();
-    res.render('song', { song });
+    res.render('song', { song }); // ✅ عرض صفحة الأغنية
   } catch (err) {
     console.error("🔥 خطأ أثناء عرض الأغنية:", err);
     res.status(500).send("خطأ في الخادم");
   }
 });
 
-// حذف أغنية
+// حذف أغنية من التخزين وقاعدة البيانات
 app.post('/delete/:id', async (req, res) => {
   const songId = req.params.id;
 
@@ -141,8 +143,8 @@ app.post('/delete/:id', async (req, res) => {
     const song = doc.data();
     const file = bucket.file(`songs/${song.filename}`);
 
-    await file.delete();
-    await docRef.delete();
+    await file.delete();       // حذف من التخزين
+    await docRef.delete();     // حذف من Firestore
 
     res.redirect('/dashboard');
   } catch (err) {
