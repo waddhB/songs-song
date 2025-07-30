@@ -142,54 +142,73 @@
         <th>حذف</th>
       </tr>
     </thead>
-    <tbody>
-      <% songs.forEach(song => { %>
-        <tr>
-          <td><%= song.title %></td>
-          <td><%= song.artist %></td>
-          <td>
-            <% if (song.createdAt && song.createdAt.toDate) { %>
-              <%= song.createdAt.toDate().toLocaleString('ar-EG', {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit'
-              }) %>
-            <% } else { %>
-              غير متوفر
-            <% } %>
-          </td>
-          <td>
-            <audio controls>
-              <source src="<%= song.url %>" type="audio/mpeg">
-              لا يدعم متصفحك التشغيل
-            </audio>
-          </td>
-          <td>
-            <input type="text" value="<%= song.url %>" readonly style="width: 90%;">
-          </td>
-          <td>
-            <button class="copy-btn" onclick="copyToClipboard('<%= song.url %>')">نسخ</button>
-          </td>
-          <td>
-            <form action="/delete/<%= song.id %>" method="POST" onsubmit="return confirm('هل تريد حذف هذه الأغنية؟');">
-              <button type="submit">🗑️ حذف</button>
-            </form>
-          </td>
-        </tr>
-      <% }) %>
-    </tbody>
+     <tbody>
+       <% songs.forEach(song => { %>
+         <tr>
+           <!-- عنوان الأغنية كرابط -->
+           <td>
+             <a href="/song/<%= song.url_code %>" target="_blank"><%= song.title %></a>
+           </td>
+     
+           <td><%= song.artist %></td>
+     
+           <td>
+             <% if (song.createdAt && song.createdAt.toDate) { %>
+               <%= song.createdAt.toDate().toLocaleString('ar-EG', {
+                 year: 'numeric',
+                 month: 'long',
+                 day: 'numeric',
+                 hour: '2-digit',
+                 minute: '2-digit'
+               }) %>
+             <% } else { %>
+               غير متوفر
+             <% } %>
+           </td>
+     
+           <td>
+             <audio controls>
+               <source src="<%= song.url %>" type="audio/mpeg">
+               لا يدعم متصفحك التشغيل
+             </audio>
+           </td>
+     
+           <!-- رابط المشاركة في input -->
+           <td>
+             <input id="share-link-<%= song.id %>" type="text"
+                    value="<%= 'https://' + req.headers.host + '/song/' + song.url_code %>"
+                    readonly style="width: 90%;">
+           </td>
+     
+           <!-- زر نسخ يستخدم ID الحقل -->
+           <td>
+             <button class="copy-btn" onclick="copyToClipboard('share-link-<%= song.id %>')">نسخ</button>
+           </td>
+     
+           <!-- زر الحذف -->
+           <td>
+             <form action="/delete/<%= song.id %>" method="POST"
+                   onsubmit="return confirm('هل تريد حذف هذه الأغنية؟');">
+               <button type="submit">🗑️ حذف</button>
+             </form>
+           </td>
+         </tr>
+       <% }) %>
+     </tbody>
   </table>
 
   <a class="logout" href="/logout">تسجيل الخروج</a>
 
   <script>
-    function copyToClipboard(text) {
-      navigator.clipboard.writeText(text)
+    function copyToClipboard(elementId) {
+      const input = document.getElementById(elementId);
+      input.select();
+      input.setSelectionRange(0, 99999); // دعم الهواتف
+      navigator.clipboard.writeText(input.value)
         .then(() => alert("✅ تم نسخ الرابط"))
         .catch(() => alert("❌ فشل النسخ"));
     }
-  </script>
+   </script>
+
 </body>
 </html>
