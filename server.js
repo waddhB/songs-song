@@ -4,42 +4,41 @@ const multer = require('multer');
 const { v4: uuidv4 } = require('uuid');
 const path = require('path');
 const fs = require('fs');
-const { db, bucket } = require('./firebase'); // استدعاء Firebase
+const fetch = require('node-fetch'); // 🔄 لبث ملفات الصوت الخاصة
+const { db, bucket } = require('./firebase');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// بيانات الدخول (ثابتة)
+// بيانات الدخول
 const ADMIN_USERNAME = '1';
 const ADMIN_PASSWORD = '1';
 
-// إعداد EJS والملفات العامة
+// إعدادات EJS والملفات العامة
 app.set('view engine', 'ejs');
 app.use(express.static('public'));
 app.use(express.urlencoded({ extended: true }));
 
-// إعداد الجلسات
+// جلسات تسجيل الدخول
 app.use(session({
   secret: 'lamsat_secret_key',
   resave: false,
   saveUninitialized: false
 }));
 
-// إعداد multer للتخزين في الذاكرة
+// إعداد رفع الملفات
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
 
-// الصفحة الرئيسية → تحويل إلى تسجيل الدخول
+// الصفحة الرئيسية → تسجيل الدخول
 app.get('/', (req, res) => {
   res.redirect('/login');
 });
 
-// صفحة تسجيل الدخول
 app.get('/login', (req, res) => {
   res.render('login', { error: null });
 });
 
-// التحقق من بيانات الدخول
 app.post('/login', (req, res) => {
   const { username, password } = req.body;
   if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
@@ -50,21 +49,21 @@ app.post('/login', (req, res) => {
   }
 });
 
-// لوحة التحكم – عرض جميع الأغاني
+// عرض لوحة التحكم
 app.get('/dashboard', async (req, res) => {
   if (!req.session.loggedIn) return res.redirect('/login');
 
   try {
     const snapshot = await db.collection('songs').orderBy('createdAt', 'desc').get();
     const songs = snapshot.docs.map(doc => doc.data());
-    res.render('dashboard', { songs, req }); // ✅ تمرير req لاستخدامه في بناء الروابط
+    res.render('dashboard', { songs, req }); // ✅ تمرير req لبناء روابط المشاركة
   } catch (err) {
     console.error("🔥 خطأ في قراءة Firestore:", err);
     res.send("Database error");
   }
 });
 
-// رفع الأغنية إلى Firebase Storage
+// رفع أغنية
 app.post('/upload', upload.single('song'), async (req, res) => {
   if (!req.session.loggedIn) return res.redirect('/login');
   if (!req.file) return res.status(400).send('لم يتم تحديد ملف');
@@ -72,7 +71,7 @@ app.post('/upload', upload.single('song'), async (req, res) => {
   const { originalname, buffer } = req.file;
   const { title, artist, visibility } = req.body;
 
-  const url_code = uuidv4(); // رابط فريد
+  const url_code = uuidv4();
   const uniqueName = Date.now() + '-' + originalname;
   const blob = bucket.file(`songs/${uniqueName}`);
   const blobStream = blob.createWriteStream({
@@ -88,13 +87,11 @@ app.post('/upload', upload.single('song'), async (req, res) => {
 
   blobStream.on('finish', async () => {
     try {
-      // رابط مؤقت صالح لمدة سنة
       const [url] = await blob.getSignedUrl({
         action: 'read',
         expires: Date.now() + 365 * 24 * 60 * 60 * 1000
       });
 
-      // حفظ بيانات الأغنية في Firestore
       await db.collection('songs').doc(url_code).set({
         id: url_code,
         title,
@@ -116,21 +113,44 @@ app.post('/upload', upload.single('song'), async (req, res) => {
   blobStream.end(buffer);
 });
 
-// عرض صفحة الأغنية عبر url_code
+// صفحة عرض الأغنية
 app.get('/song/:code', async (req, res) => {
   try {
     const doc = await db.collection('songs').doc(req.params.code).get();
-    if (!doc.exists) return res.send("لم يتم العثور على الأغنية");
+    if (!doc.exists) return res.send("❌ لم يتم العثور على الأغنية");
 
     const song = doc.data();
-    res.render('song', { song }); // ✅ عرض صفحة الأغنية
+    res.render('song', { song });
   } catch (err) {
     console.error("🔥 خطأ أثناء عرض الأغنية:", err);
     res.status(500).send("خطأ في الخادم");
   }
 });
 
-// حذف أغنية من التخزين وقاعدة البيانات
+// 🔒 بث الأغنية الخاصة فقط (بدون كشف رابط الصوت)
+app.get('/stream/:code', async (req, res) => {
+  try {
+    const doc = await db.collection('songs').doc(req.params.code).get();
+    if (!doc.exists) return res.status(404).send("❌ الأغنية غير موجودة");
+
+    const song = doc.data();
+
+    if (song.visibility !== 'private') {
+      return res.redirect(song.url); // الأغاني العامة يُعاد توجيهها مباشرة
+    }
+
+    const response = await fetch(song.url);
+    if (!response.ok) throw new Error("❌ فشل في تحميل الملف من Firebase");
+
+    res.setHeader('Content-Type', 'audio/mpeg');
+    response.body.pipe(res);
+  } catch (err) {
+    console.error("🔥 فشل في بث الصوت:", err);
+    res.status(500).send("خطأ أثناء تشغيل الصوت");
+  }
+});
+
+// حذف أغنية
 app.post('/delete/:id', async (req, res) => {
   const songId = req.params.id;
 
@@ -143,8 +163,8 @@ app.post('/delete/:id', async (req, res) => {
     const song = doc.data();
     const file = bucket.file(`songs/${song.filename}`);
 
-    await file.delete();       // حذف من التخزين
-    await docRef.delete();     // حذف من Firestore
+    await file.delete();
+    await docRef.delete();
 
     res.redirect('/dashboard');
   } catch (err) {
