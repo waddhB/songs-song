@@ -4,36 +4,30 @@ const multer = require('multer');
 const { v4: uuidv4 } = require('uuid');
 const path = require('path');
 const fs = require('fs');
-const fetch = require('node-fetch'); // للبث من Firebase
+const fetch = require('node-fetch');
+const { PassThrough } = require('stream');
 const { db, bucket } = require('./firebase');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// بيانات الدخول
 const ADMIN_USERNAME = '1';
 const ADMIN_PASSWORD = '1';
 
-// إعدادات EJS والملفات العامة
 app.set('view engine', 'ejs');
 app.use(express.static('public'));
 app.use(express.urlencoded({ extended: true }));
 
-// إعداد الجلسات
 app.use(session({
   secret: 'lamsat_secret_key',
   resave: false,
   saveUninitialized: false
 }));
 
-// إعداد multer
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
 
-// صفحة تسجيل الدخول
-app.get('/', (req, res) => {
-  res.redirect('/login');
-});
+app.get('/', (req, res) => res.redirect('/login'));
 
 app.get('/login', (req, res) => {
   res.render('login', { error: null });
@@ -49,21 +43,18 @@ app.post('/login', (req, res) => {
   }
 });
 
-// لوحة التحكم
 app.get('/dashboard', async (req, res) => {
   if (!req.session.loggedIn) return res.redirect('/login');
-
   try {
     const snapshot = await db.collection('songs').orderBy('createdAt', 'desc').get();
     const songs = snapshot.docs.map(doc => doc.data());
     res.render('dashboard', { songs, req });
   } catch (err) {
-    console.error("🔥 خطأ في قراءة Firestore:", err);
+    console.error("🔥 Firestore Error:", err);
     res.send("Database error");
   }
 });
 
-// رفع أغنية جديدة
 app.post('/upload', upload.single('song'), async (req, res) => {
   if (!req.session.loggedIn) return res.redirect('/login');
   if (!req.file) return res.status(400).send('لم يتم تحديد ملف');
@@ -75,13 +66,11 @@ app.post('/upload', upload.single('song'), async (req, res) => {
   const uniqueName = Date.now() + '-' + originalname;
   const blob = bucket.file(`songs/${uniqueName}`);
   const blobStream = blob.createWriteStream({
-    metadata: {
-      contentType: req.file.mimetype
-    }
+    metadata: { contentType: req.file.mimetype }
   });
 
   blobStream.on('error', err => {
-    console.error("🔥 خطأ في رفع الملف:", err);
+    console.error("🔥 Upload Error:", err);
     res.status(500).send('خطأ في رفع الأغنية');
   });
 
@@ -89,7 +78,7 @@ app.post('/upload', upload.single('song'), async (req, res) => {
     try {
       const [url] = await blob.getSignedUrl({
         action: 'read',
-        expires: Date.now() + 365 * 24 * 60 * 60 * 1000 // سنة
+        expires: Date.now() + 365 * 24 * 60 * 60 * 1000
       });
 
       await db.collection('songs').doc(url_code).set({
@@ -105,7 +94,7 @@ app.post('/upload', upload.single('song'), async (req, res) => {
 
       res.redirect('/dashboard');
     } catch (err) {
-      console.error("🔥 خطأ أثناء تجهيز الرابط:", err);
+      console.error("🔥 Signed URL Error:", err);
       res.status(500).send("حدث خطأ أثناء تجهيز الرابط");
     }
   });
@@ -113,7 +102,6 @@ app.post('/upload', upload.single('song'), async (req, res) => {
   blobStream.end(buffer);
 });
 
-// عرض صفحة الأغنية
 app.get('/song/:code', async (req, res) => {
   try {
     const doc = await db.collection('songs').doc(req.params.code).get();
@@ -122,45 +110,59 @@ app.get('/song/:code', async (req, res) => {
     const song = doc.data();
     res.render('song', { song });
   } catch (err) {
-    console.error("🔥 خطأ أثناء عرض الأغنية:", err);
+    console.error("🔥 Song Page Error:", err);
     res.status(500).send("خطأ في الخادم");
   }
 });
 
-// 🔒 بث الأغاني الخاصة (بدون كشف الرابط المباشر)
+// ✅ بث مجزأ للأغاني الخاصة فقط + أقصى حماية
 app.get('/stream/:code', async (req, res) => {
   try {
     const doc = await db.collection('songs').doc(req.params.code).get();
     if (!doc.exists) return res.status(404).send("❌ الأغنية غير موجودة");
 
     const song = doc.data();
-
-    // إذا الأغنية عامة → إعادة توجيه
     if (song.visibility !== 'private') {
-      return res.redirect(song.url);
+      return res.redirect(song.url); // العامة توجه مباشرة
     }
 
-    const response = await fetch(song.url);
-    if (!response.ok) throw new Error("❌ فشل في تحميل الملف من Firebase");
+    const file = bucket.file(`songs/${song.filename}`);
+    const [metadata] = await file.getMetadata();
+    const fileSize = Number(metadata.size);
+    const range = req.headers.range;
 
-    res.setHeader('Content-Type', 'audio/mpeg');
-    // الحماية: لا نسمح بالتحميل
-    res.setHeader('Content-Disposition', 'inline');
-    response.body.pipe(res);
+    if (!range) {
+      return res.status(416).send('❌ يتطلب دعم Range Requests');
+    }
+
+    const parts = range.replace(/bytes=/, '').split('-');
+    const start = parseInt(parts[0], 10);
+    const end = parts[1] ? parseInt(parts[1], 10) : fileSize - 1;
+    const chunkSize = (end - start) + 1;
+
+    const stream = file.createReadStream({ start, end });
+
+    res.writeHead(206, {
+      'Content-Range': `bytes ${start}-${end}/${fileSize}`,
+      'Accept-Ranges': 'bytes',
+      'Content-Length': chunkSize,
+      'Content-Type': 'audio/mpeg',
+      'Cache-Control': 'no-store',
+      'Content-Disposition': 'inline; filename="audio.bin"'
+    });
+
+    stream.pipe(res);
   } catch (err) {
-    console.error("🔥 فشل في بث الصوت:", err);
-    res.status(500).send("خطأ أثناء تشغيل الصوت");
+    console.error("🔥 Stream Error:", err);
+    res.status(500).send("خطأ أثناء البث");
   }
 });
 
-// حذف الأغنية
 app.post('/delete/:id', async (req, res) => {
   const songId = req.params.id;
-
   try {
     const docRef = db.collection('songs').doc(songId);
     const doc = await docRef.get();
-
     if (!doc.exists) return res.redirect('/dashboard');
 
     const song = doc.data();
@@ -168,19 +170,16 @@ app.post('/delete/:id', async (req, res) => {
 
     await file.delete();
     await docRef.delete();
-
     res.redirect('/dashboard');
   } catch (err) {
-    console.error("🔥 فشل الحذف:", err);
+    console.error("🔥 Delete Error:", err);
     res.redirect('/dashboard');
   }
 });
 
-// تسجيل الخروج
 app.get('/logout', (req, res) => {
   req.session.destroy();
   res.redirect('/login');
 });
 
-// تشغيل السيرفر
 app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
