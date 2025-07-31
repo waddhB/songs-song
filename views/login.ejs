@@ -1,94 +1,123 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="en" dir="rtl" >
 <head>
   <meta charset="UTF-8">
-  <title>تسجيل الدخول - لوحة التحكم</title>
-  <style>
-    body {
-      background-color: #f0f2f5;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      margin: 0;
-    }
+  <title>Modern Glassmorphism Login Form</title>
+ <style>
+    @import url("https://fonts.googleapis.com/css2?family=Poppins:wght@200;400;500;600;700;800;900&display=swap");
 
-    .login-box {
-      background: #ffffff;
-      padding: 50px 40px;
-      border-radius: 12px;
-      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
-      width: 100%;
-      max-width: 400px;
-      text-align: center;
-    }
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: "Poppins", sans-serif;
+}
 
-    .login-box h1 {
-      margin-bottom: 25px;
-      font-size: 26px;
-      color: #222;
-    }
+body {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background-color: #250025;
+  background-size: cover;
+  background-position: center;
+}
 
-    .login-box input {
-      width: 100%;
-      padding: 12px 15px;
-      margin: 10px 0;
-      border: 1px solid #ddd;
-      border-radius: 6px;
-      font-size: 15px;
-      transition: 0.3s;
-    }
+.wrapper {
+  margin-top: 40px;
+  width: 420px;
+  background-color: transparent;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(15px);
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+  color: #fff;
+  border-radius: 16px;
+  padding: 20px 30px;
+}
 
-    .login-box input:focus {
-      border-color: #007bff;
-      outline: none;
-      box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.1);
-    }
+.wrapper h1 {
+  font-size: 30px;
+  text-align: center;
+}
 
-    .login-box button {
-      width: 100%;
-      padding: 12px;
-      margin-top: 15px;
-      background-color: #007bff;
-      color: white;
-      border: none;
-      border-radius: 6px;
-      font-size: 16px;
-      cursor: pointer;
-      transition: background-color 0.3s;
-    }
+.wrapper .input-box {
+  width: 100%;
+  height: 50px;
+  position: relative;
+  margin: 30px 0;
+}
 
-    .login-box button:hover {
-      background-color: #0056b3;
-    }
+.input-box input {
+  width: 100%;
+  height: 100%;
+  background: transparent;
+  border: none;
+  outline: none;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-radius: 40px;
+  font-size: 16px;
+  color: #fff;
+  padding: 20px 45px 20px 20px;
+}
+
+.input-box input::placeholder {
+  color: #fff;
+}
+
+.input-box i {
+  position: absolute;
+  left: 20px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 20px;
+}
+
+.wrapper .btn {
+  width: 100%;
+  height: 45px;
+  background: #fff;
+  border: none;
+  outline: none;
+  border-radius: 40px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+  font-size: 16px;
+  color: #333;
+  font-weight: 600;
+}
 
     .error-msg {
-      background-color: #ffe3e3;
-      color: #b10000;
+      background: transparent;
+      color: #ffffff;
       padding: 10px;
       margin-bottom: 15px;
-      border: 1px solid #ffcccc;
-      border-radius: 6px;
-      font-size: 14px;
+      border: 2px solid rgba(255, 255, 255, 0.2);
+      border-radius: 40px;
+      font-size: 16px;
     }
-  </style>
+
+
+ </style>
 </head>
 <body>
-
-  <div class="login-box">
-    <h1>تسجيل الدخول إلى لوحة التحكم</h1>
-
-    <% if (error) { %>
-      <div class="error-msg"><%= error %></div>
-    <% } %>
-
-    <form action="/login" method="POST">
-      <input type="text" name="username" placeholder="اسم المستخدم" required>
-      <input type="password" name="password" placeholder="كلمة المرور" required>
-      <button type="submit">تسجيل الدخول</button>
-    </form>
-  </div>
-
+<div class="wrapper">
+        <form action="/login" method="POST">
+            <h1>Login</h1>
+            <% if (error) { %>
+             <div class="error-msg"><%= error %></div>
+            <% } %>
+            <div class="input-box">
+                <input type="text" name="username" placeholder="اسم المستخدم" required>
+                <i class='bx bxs-user'></i>
+            </div>
+            <div class="input-box">
+                <input type="password"  name="password" placeholder="كلمة المرور" required>
+                <i class='bx bxs-lock-alt'></i>
+            </div>
+            
+            <button type="submit" class="btn">Login</button>
+            
+        </form>
+    </div>
 </body>
 </html>
