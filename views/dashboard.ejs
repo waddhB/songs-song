@@ -101,7 +101,7 @@
 </head>
 <body>
   <h1>لوحة التحكم</h1>
-  <form class="upload-form" action="/upload" method="POST" enctype="multipart/form-data">
+  <form class="upload-form" enctype="multipart/form-data">
     <h2>رفع أغنية جديدة</h2>
     <input type="text" name="title" placeholder="عنوان الأغنية" required>
     <input type="text" name="artist" placeholder="اسم الفنان" required>
@@ -111,6 +111,8 @@
     </select>
     <input type="file" name="song" accept="audio/*" required>
     <button type="submit">رفع</button>
+    <progress id="uploadProgress" value="0" max="100" style="width:100%; display:none;"></progress>
+    <p id="uploadStatus" style="text-align:center; font-size:14px;"></p>
   </form>
   <h2>الأغاني المرفوعة</h2>
   <table>
@@ -184,6 +186,42 @@
         .then(() => alert("✅ تم نسخ الرابط"))
         .catch(() => alert("❌ فشل النسخ"));
     }
+
+    // Progress bar script
+    const form = document.querySelector('.upload-form');
+    const progressBar = document.getElementById('uploadProgress');
+    const statusText = document.getElementById('uploadStatus');
+
+    form.addEventListener('submit', function(e) {
+      e.preventDefault();
+      const formData = new FormData(form);
+      const xhr = new XMLHttpRequest();
+
+      xhr.upload.addEventListener('progress', function(e) {
+        if (e.lengthComputable) {
+          const percent = Math.round((e.loaded / e.total) * 100);
+          progressBar.value = percent;
+          progressBar.style.display = 'block';
+          statusText.innerText = `جاري رفع الأغنية... ${percent}%`;
+        }
+      });
+
+      xhr.onreadystatechange = function() {
+        if (xhr.readyState === XMLHttpRequest.DONE) {
+          if (xhr.status === 200) {
+            statusText.innerText = "✅ تم رفع الأغنية بنجاح";
+            form.reset();
+          } else {
+            statusText.innerText = "❌ فشل في رفع الأغنية";
+          }
+          progressBar.style.display = 'none';
+          progressBar.value = 0;
+        }
+      };
+
+      xhr.open('POST', '/upload', true);
+      xhr.send(formData);
+    });
   </script>
 </body>
 </html>
