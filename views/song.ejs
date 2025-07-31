@@ -77,7 +77,7 @@
       margin-top: 10px;
     }
 
-    /* 🔒 إخفاء زر التحميل من القائمة */
+    /* 🔒 إخفاء زر التحميل */
     audio::-internal-media-controls-download-button {
       display: none;
     }
@@ -89,16 +89,20 @@
     audio::-webkit-media-controls-panel {
       width: 100% !important;
     }
+
+    /* 🔒 منع تحديد النص والنسخ */
+    * {
+      user-select: none;
+    }
   </style>
 </head>
-<body>
+<body oncontextmenu="return false" onkeydown="blockKeys(event)">
   <div class="container">
     <h1><%= song.title %></h1>
     <h3>بواسطة: <%= song.artist %></h3>
 
-    <!-- ✅ تشغيل الصوت مع الحماية في حالة private -->
     <% if (song.visibility === 'private') { %>
-      <audio controls oncontextmenu="return false" draggable="false">
+      <audio controls controlsList="nodownload" oncontextmenu="return false" draggable="false">
         <source src="/stream/<%= song.url_code %>" type="audio/mpeg">
         متصفحك لا يدعم تشغيل الصوت.
       </audio>
@@ -130,6 +134,15 @@
           }, 3000);
         })
         .catch(() => alert('❌ فشل نسخ الرابط'));
+    }
+
+    // 🔒 تعطيل أزرار الحفظ والتنزيل من الكيبورد
+    function blockKeys(e) {
+      const forbiddenKeys = ['s', 'S', 'u', 'U'];
+      if ((e.ctrlKey || e.metaKey) && forbiddenKeys.includes(e.key)) {
+        e.preventDefault();
+        alert("🚫 لا يمكنك استخدام هذا الاختصار");
+      }
     }
   </script>
 </body>
