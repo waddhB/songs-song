@@ -4,7 +4,7 @@ const multer = require('multer');
 const { v4: uuidv4 } = require('uuid');
 const path = require('path');
 const fs = require('fs');
-const fetch = require('node-fetch'); // 🔄 لبث ملفات الصوت الخاصة
+const fetch = require('node-fetch'); // للبث من Firebase
 const { db, bucket } = require('./firebase');
 
 const app = express();
@@ -19,18 +19,18 @@ app.set('view engine', 'ejs');
 app.use(express.static('public'));
 app.use(express.urlencoded({ extended: true }));
 
-// جلسات تسجيل الدخول
+// إعداد الجلسات
 app.use(session({
   secret: 'lamsat_secret_key',
   resave: false,
   saveUninitialized: false
 }));
 
-// إعداد رفع الملفات
+// إعداد multer
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
 
-// الصفحة الرئيسية → تسجيل الدخول
+// صفحة تسجيل الدخول
 app.get('/', (req, res) => {
   res.redirect('/login');
 });
@@ -49,21 +49,21 @@ app.post('/login', (req, res) => {
   }
 });
 
-// عرض لوحة التحكم
+// لوحة التحكم
 app.get('/dashboard', async (req, res) => {
   if (!req.session.loggedIn) return res.redirect('/login');
 
   try {
     const snapshot = await db.collection('songs').orderBy('createdAt', 'desc').get();
     const songs = snapshot.docs.map(doc => doc.data());
-    res.render('dashboard', { songs, req }); // ✅ تمرير req لبناء روابط المشاركة
+    res.render('dashboard', { songs, req });
   } catch (err) {
     console.error("🔥 خطأ في قراءة Firestore:", err);
     res.send("Database error");
   }
 });
 
-// رفع أغنية
+// رفع أغنية جديدة
 app.post('/upload', upload.single('song'), async (req, res) => {
   if (!req.session.loggedIn) return res.redirect('/login');
   if (!req.file) return res.status(400).send('لم يتم تحديد ملف');
@@ -89,7 +89,7 @@ app.post('/upload', upload.single('song'), async (req, res) => {
     try {
       const [url] = await blob.getSignedUrl({
         action: 'read',
-        expires: Date.now() + 365 * 24 * 60 * 60 * 1000
+        expires: Date.now() + 365 * 24 * 60 * 60 * 1000 // سنة
       });
 
       await db.collection('songs').doc(url_code).set({
@@ -113,7 +113,7 @@ app.post('/upload', upload.single('song'), async (req, res) => {
   blobStream.end(buffer);
 });
 
-// صفحة عرض الأغنية
+// عرض صفحة الأغنية
 app.get('/song/:code', async (req, res) => {
   try {
     const doc = await db.collection('songs').doc(req.params.code).get();
@@ -127,7 +127,7 @@ app.get('/song/:code', async (req, res) => {
   }
 });
 
-// 🔒 بث الأغنية الخاصة فقط (بدون كشف رابط الصوت)
+// 🔒 بث الأغاني الخاصة (بدون كشف الرابط المباشر)
 app.get('/stream/:code', async (req, res) => {
   try {
     const doc = await db.collection('songs').doc(req.params.code).get();
@@ -135,14 +135,17 @@ app.get('/stream/:code', async (req, res) => {
 
     const song = doc.data();
 
+    // إذا الأغنية عامة → إعادة توجيه
     if (song.visibility !== 'private') {
-      return res.redirect(song.url); // الأغاني العامة يُعاد توجيهها مباشرة
+      return res.redirect(song.url);
     }
 
     const response = await fetch(song.url);
     if (!response.ok) throw new Error("❌ فشل في تحميل الملف من Firebase");
 
     res.setHeader('Content-Type', 'audio/mpeg');
+    // الحماية: لا نسمح بالتحميل
+    res.setHeader('Content-Disposition', 'inline');
     response.body.pipe(res);
   } catch (err) {
     console.error("🔥 فشل في بث الصوت:", err);
@@ -150,7 +153,7 @@ app.get('/stream/:code', async (req, res) => {
   }
 });
 
-// حذف أغنية
+// حذف الأغنية
 app.post('/delete/:id', async (req, res) => {
   const songId = req.params.id;
 
