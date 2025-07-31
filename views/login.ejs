@@ -3,15 +3,19 @@
 <head>
   <meta charset="UTF-8">
   <title>Modern Glassmorphism Login Form</title>
-  <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
- <style>
+  <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>  <link rel="stylesheet" href="./style.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
     @import url("https://fonts.googleapis.com/css2?family=Poppins:wght@200;400;500;600;700;800;900&display=swap");
+@import url(https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap);
+@import url(https://fonts.googleapis.com/css2?family=Alexandria:wght@197&family=Readex+Pro:wght@700&display=swap);
 
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
-  font-family: "Poppins", sans-serif;
+	font-family: Alexandria, sans-serif;
+  font-weight: 900;
 }
 
 body {
@@ -19,13 +23,12 @@ body {
   justify-content: center;
   align-items: center;
   min-height: 100vh;
-  background-color: #250025;
-  background-size: cover;
+  background: url("https://i.pinimg.com/originals/d7/b9/0c/d7b90cc80898e8823455a127945719af.jpg");  background-size: cover;
   background-position: center;
 }
 
 .wrapper {
-  margin-top: 40px;
+  /* margin-top: 40px; */
   width: 420px;
   background-color: transparent;
   border: 2px solid rgba(255, 255, 255, 0.2);
@@ -34,11 +37,19 @@ body {
   color: #fff;
   border-radius: 16px;
   padding: 20px 30px;
+  text-align: center;
+
 }
 
 .wrapper h1 {
   font-size: 30px;
   text-align: center;
+}
+
+.error-msg {
+  color: #fb7676;
+  margin-top: 25px;
+  font-size: 16px;
 }
 
 .wrapper .input-box {
@@ -58,7 +69,7 @@ body {
   border-radius: 40px;
   font-size: 16px;
   color: #fff;
-  padding: 20px 45px 20px 20px;
+  padding: 20px  20px 20px;
 }
 
 .input-box input::placeholder {
@@ -86,26 +97,48 @@ body {
   color: #333;
   font-weight: 600;
 }
+@media (max-width:500px) {
+  .wrapper {
+  min-width: 80vw;
+  margin: 30px;
+  }
+.wrapper h1 {
+  font-size: 6vw;
+}
+.error-msg {
+  font-size: 3vw;
+  margin-top: 5vw;
+}
+.input-box input {
+  height: 10vw;
+  font-size: 3vw;
 
-    .error-msg {
-      background: transparent;
-      color: #ffffff;
-      padding: 10px;
-      margin-bottom: 15px;
-      border: 2px solid rgba(255, 255, 255, 0.2);
-      border-radius: 40px;
-      font-size: 16px;
-    }
+}
+.wrapper .input-box {
+  margin: 6vw 0;
+}
+.wrapper .btn {
+  height: 10vw;
+  font-size: 4vw;
 
+}
 
- </style>
+.input-box i {
+  font-size: 4vw;
+  top: 45%;
+  left: 15px;
+}
+
+}
+</style>
 </head>
 <body>
 <div class="wrapper">
+    
         <form action="/login" method="POST">
-            <h1>Login</h1>
+            <h1>لوحة التحكم</h1>
             <% if (error) { %>
-             <div class="error-msg"><%= error %></div>
+            <div class="error-msg"><%= error %></div>
             <% } %>
             <div class="input-box">
                 <input type="text" name="username" placeholder="اسم المستخدم" required>
@@ -116,8 +149,7 @@ body {
                 <i class='bx bxs-lock-alt'></i>
             </div>
             
-            <button type="submit" class="btn">Login</button>
-            
+            <button type="submit" class="btn">دخول</button>
         </form>
     </div>
 </body>
