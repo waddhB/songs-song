@@ -13,7 +13,6 @@
       text-align: right;
       color: #333;
     }
-
     .container {
       background-color: #ffffff;
       padding: 30px;
@@ -23,30 +22,25 @@
       box-shadow: 0 4px 15px rgba(0, 0, 0, 0.07);
       text-align: center;
     }
-
     h1 {
       font-size: 26px;
       margin-bottom: 10px;
       color: #2c3e50;
     }
-
     h3 {
       font-size: 18px;
       color: #7f8c8d;
       margin-bottom: 25px;
     }
-
     audio {
       width: 100%;
       outline: none;
     }
-
     .note {
       font-size: 13px;
       color: #aaa;
       margin-top: 20px;
     }
-
     .buttons {
       margin-top: 25px;
       display: flex;
@@ -66,63 +60,58 @@
       text-decoration: none;
       transition: background-color 0.3s;
     }
-
     .btn:hover {
       background-color: #2980b9;
     }
-
     .success {
       color: green;
       font-size: 14px;
       margin-top: 10px;
     }
-
     /* 🔒 إخفاء زر التحميل */
     audio::-internal-media-controls-download-button {
       display: none;
     }
-
     audio::-webkit-media-controls-enclosure {
       overflow: hidden;
     }
-
     audio::-webkit-media-controls-panel {
       width: 100% !important;
     }
-
-    /* 🔒 منع تحديد النص والنسخ */
-    * {
-      user-select: none;
-    }
   </style>
+  <!-- 🔒 تعطيل الزر الأيمن ولوحة أدوات المطور -->
+  <script>
+    document.addEventListener('contextmenu', e => e.preventDefault());
+    document.onkeydown = function (e) {
+      if (e.key === "F12" || (e.ctrlKey && e.shiftKey && (e.key === "I" || e.key === "J" || e.key === "C")) || (e.ctrlKey && e.key === "U")) {
+        return false;
+      }
+    };
+  </script>
 </head>
-<body oncontextmenu="return false" onkeydown="blockKeys(event)">
+<body>
   <div class="container">
     <h1><%= song.title %></h1>
     <h3>بواسطة: <%= song.artist %></h3>
-
     <% if (song.visibility === 'private') { %>
-      <audio controls controlsList="nodownload" oncontextmenu="return false" draggable="false">
+      <audio controls oncontextmenu="return false" draggable="false" controlsList="nodownload">
         <source src="/stream/<%= song.url_code %>" type="audio/mpeg">
         متصفحك لا يدعم تشغيل الصوت.
       </audio>
-      <div class="note" style="margin-top: 25px;">🔒 هذه الأغنية خاصة ولا يمكن تحميلها</div>
+      <div class="note">🔒 هذه الأغنية خاصة ولا يمكن تحميلها</div>
     <% } else { %>
       <audio controls>
         <source src="<%= song.url %>" type="audio/mpeg">
         متصفحك لا يدعم تشغيل الصوت.
       </audio>
-
       <div class="buttons">
         <a class="btn" href="<%= song.url %>" download>تحميل الأغنية</a>
         <button class="btn" onclick="copyLink()">مشاركة الرابط</button>
         <div id="copySuccess" class="success" style="display:none;">تم نسخ الرابط ✅</div>
       </div>
     <% } %>
-
     <div class="note">تم تحميل الصوت من Firebase</div>
   </div>
-
   <script>
     function copyLink() {
       const text = window.location.href;
@@ -134,15 +123,6 @@
           }, 3000);
         })
         .catch(() => alert('❌ فشل نسخ الرابط'));
-    }
-
-    // 🔒 تعطيل أزرار الحفظ والتنزيل من الكيبورد
-    function blockKeys(e) {
-      const forbiddenKeys = ['s', 'S', 'u', 'U'];
-      if ((e.ctrlKey || e.metaKey) && forbiddenKeys.includes(e.key)) {
-        e.preventDefault();
-        alert("🚫 لا يمكنك استخدام هذا الاختصار");
-      }
     }
   </script>
 </body>
