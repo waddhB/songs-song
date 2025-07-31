@@ -136,7 +136,8 @@
           <td><%= song.artist %></td>
           <td>
             <% if (song.createdAt && song.createdAt.toDate) { %>
-              <%= song.createdAt.toDate().toLocaleString('ar-EG', {
+              <%= song.createdAt.toDate().toLocaleString('ar-SA', {
+                timeZone: 'Asia/Riyadh',
                 year: 'numeric',
                 month: 'long',
                 day: 'numeric',
