@@ -208,15 +208,16 @@
 
       xhr.onreadystatechange = function() {
         if (xhr.readyState === XMLHttpRequest.DONE) {
-          if (xhr.status === 200) {
-            statusText.innerText = "✅ تم رفع الأغنية بنجاح";
-            form.reset();
-          } else {
-            statusText.innerText = "❌ فشل في رفع الأغنية";
-          }
-          progressBar.style.display = 'none';
-          progressBar.value = 0;
-        }
+         if (xhr.status === 200) {
+           statusText.innerText = "✅ تم رفع الأغنية بنجاح";
+           setTimeout(() => {
+            location.reload(); // 🔄 تحديث الصفحة بعد ثانيتين
+        }, 2000);
+      } else {
+      statusText.innerText = "❌ فشل في رفع الأغنية";
+      progressBar.style.display = 'none';
+      progressBar.value = 0;
+     }
       };
 
       xhr.open('POST', '/upload', true);
