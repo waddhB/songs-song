@@ -97,11 +97,34 @@
       text-decoration: none;
       color: #444;
     }
+    .progress-container {
+      margin-top: 10px;
+      text-align: center;
+    }
+    .progress-bar {
+      width: 100%;
+      height: 20px;
+      background-color: #eee;
+      border-radius: 10px;
+      overflow: hidden;
+      display: none;
+    }
+    .progress-bar-fill {
+      height: 100%;
+      width: 0%;
+      background-color: #4CAF50;
+      transition: width 0.4s ease;
+    }
+    #uploadStatus {
+      margin-top: 8px;
+      font-size: 14px;
+      color: #333;
+    }
   </style>
 </head>
 <body>
   <h1>لوحة التحكم</h1>
-  <form class="upload-form" action="/upload" method="POST" enctype="multipart/form-data">
+  <form class="upload-form" id="uploadForm" action="/upload" method="POST" enctype="multipart/form-data">
     <h2>رفع أغنية جديدة</h2>
     <input type="text" name="title" placeholder="عنوان الأغنية" required>
     <input type="text" name="artist" placeholder="اسم الفنان" required>
@@ -111,7 +134,15 @@
     </select>
     <input type="file" name="song" accept="audio/*" required>
     <button type="submit">رفع</button>
+
+    <div class="progress-container">
+      <div class="progress-bar" id="progressBar">
+        <div class="progress-bar-fill" id="progressBarFill"></div>
+      </div>
+      <p id="uploadStatus"></p>
+    </div>
   </form>
+
   <h2>الأغاني المرفوعة</h2>
   <table>
     <thead>
@@ -175,6 +206,7 @@
     </tbody>
   </table>
   <a class="logout" href="/logout">تسجيل الخروج</a>
+
   <script>
     function copyToClipboard(id) {
       const input = document.getElementById(id);
@@ -184,6 +216,43 @@
         .then(() => alert("✅ تم نسخ الرابط"))
         .catch(() => alert("❌ فشل النسخ"));
     }
+
+    // شريط التحميل
+    const uploadForm = document.getElementById('uploadForm');
+    const progressBar = document.getElementById('progressBar');
+    const progressBarFill = document.getElementById('progressBarFill');
+    const uploadStatus = document.getElementById('uploadStatus');
+
+    uploadForm.addEventListener('submit', function(e) {
+      e.preventDefault();
+      const formData = new FormData(uploadForm);
+      const xhr = new XMLHttpRequest();
+
+      xhr.upload.addEventListener('progress', function(e) {
+        if (e.lengthComputable) {
+          const percent = Math.round((e.loaded / e.total) * 100);
+          progressBar.style.display = 'block';
+          progressBarFill.style.width = percent + '%';
+          uploadStatus.textContent = `جاري رفع الأغنية... ${percent}%`;
+        }
+      });
+
+      xhr.onload = function() {
+        if (xhr.status === 200) {
+          uploadStatus.textContent = "✅ تم رفع الأغنية بنجاح";
+          setTimeout(() => location.reload(), 2000); // تحديث تلقائي بعد 2 ثانية
+        } else {
+          uploadStatus.textContent = "❌ فشل رفع الأغنية، حاول مرة أخرى.";
+        }
+      };
+
+      xhr.onerror = function() {
+        uploadStatus.textContent = "❌ حدث خطأ أثناء الرفع.";
+      };
+
+      xhr.open('POST', '/upload', true);
+      xhr.send(formData);
+    });
   </script>
 </body>
 </html>
